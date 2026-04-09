@@ -15,13 +15,9 @@ jobs:
       fail-fast: false
       matrix:
         python-version:
-          - '3.8'
-          - '3.9'
-          - '3.10'
           - '3.11'
           - '3.12'
-          - 'pypy3.9'
-          - 'pypy3.10'
+          - '3.13'
 
     runs-on: ubuntu-latest
 
@@ -246,19 +242,19 @@ jobs:
           - os: linux
             manylinux: auto
             target: armv7
-            interpreter: 3.8 3.9 3.10 3.11 3.12
+            interpreter: 3.11 3.12 3.13
           - os: linux
             manylinux: auto
             target: ppc64le
-            interpreter: 3.8 3.9 3.10 3.11 3.12
+            interpreter: 3.11 3.12 3.13
           - os: linux
             manylinux: auto
             target: s390x
-            interpreter: 3.8 3.9 3.10 3.11 3.12
-          - os: linux
-            manylinux: auto
-            target: x86_64
-            interpreter: pypy3.9 pypy3.10
+            interpreter: 3.11 3.12 3.13
+#          - os: linux
+#            manylinux: auto
+#            target: x86_64
+#            interpreter: pypy3.9 pypy3.10
 
           # musllinux
           - os: linux
@@ -275,22 +271,22 @@ jobs:
             target: x86_64
           - os: macos
             target: aarch64
-            interpreter: 3.8 3.9 pypy3.9 pypy3.10
+            interpreter: 3.11 3.12 3.13
 
           # windows;
           # x86_64 pypy builds are not PGO optimized
           # i686 not supported by pypy
           # aarch64 only 3.11 and up, also not PGO optimized
-          - os: windows
-            target: x86_64
-            interpreter: pypy3.9 pypy3.10
-          - os: windows
-            target: i686
-            python-architecture: x86
-            interpreter: 3.8 3.9 3.10 3.11 3.12
-          - os: windows
-            target: aarch64
-            interpreter: 3.11 3.12
+#          - os: windows
+#            target: x86_64
+#            interpreter: pypy3.9 pypy3.10
+#          - os: windows
+#            target: i686
+#            python-architecture: x86
+#            interpreter: 3.8 3.9 3.10 3.11 3.12 3.13
+#          - os: windows
+#            target: aarch64
+#            interpreter: 3.11 3.12 3.13
 
     runs-on: ${{ (matrix.os == 'linux' && 'ubuntu') || matrix.os }}-latest
     steps:
@@ -310,7 +306,7 @@ jobs:
         with:
           target: ${{ matrix.target }}
           manylinux: ${{ matrix.manylinux }}
-          args: --release --out dist --interpreter ${{ matrix.interpreter || '3.8 3.9 3.10 3.11 3.12 pypy3.9 pypy3.10' }}
+          args: --release --out dist --interpreter ${{ matrix.interpreter || '3.11 3.12 3.13' }}
           rust-toolchain: stable
           docker-options: -e CI
 
@@ -330,15 +326,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [linux, windows, macos]
-        interpreter: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        os: [linux, macos]
+        interpreter: ['3.11', '3.12', '3.13']
         include:
           # standard runners with override for macos arm
           - os: linux
             runs-on: ubuntu-latest
-          - os: windows
-            ls: dir
-            runs-on: windows-latest
           - os: macos
             runs-on: macos-latest
         exclude:
@@ -531,40 +524,40 @@ jobs:
       - run: pytest
 
 
-  release:
-    needs: [test-builds-arch, test-builds-os, build-sdist]
-    if: success() && startsWith(github.ref, 'refs/tags/')
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: set up python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - run: pip install -U twine
-
-
-      - name: get dist artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: pypi_files_*
-          merge-multiple: true
-          path: dist
-
-      - run: twine check --strict dist/*
-
-      - name: Release PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-
-      - name: Release GitHub
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            dist/*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#  release:
+#    needs: [test-builds-arch, test-builds-os, build-sdist]
+#    if: success() && startsWith(github.ref, 'refs/tags/')
+#    runs-on: ubuntu-latest
+#    permissions:
+#      id-token: write
+#      contents: write
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      - name: set up python
+#        uses: actions/setup-python@v5
+#        with:
+#          python-version: '3.10'
+#
+#      - run: pip install -U twine
+#
+#
+#      - name: get dist artifacts
+#        uses: actions/download-artifact@v4
+#        with:
+#          pattern: pypi_files_*
+#          merge-multiple: true
+#          path: dist
+#
+#      - run: twine check --strict dist/*
+#
+#      - name: Release PyPI
+#        uses: pypa/gh-action-pypi-publish@release/v1
+#
+#      - name: Release GitHub
+#        uses: softprops/action-gh-release@v1
+#        with:
+#          files: |
+#            dist/*
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
